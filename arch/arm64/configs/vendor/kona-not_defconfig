@@ -1,5 +1,5 @@
 # Localversion
-CONFIG_LOCALVERSION="-not"
+CONFIG_LOCALVERSION="Yacine Kernel S20+ y2q UI7"
 
 # RAM configuration
 CONFIG_TRANSPARENT_HUGEPAGE=y
