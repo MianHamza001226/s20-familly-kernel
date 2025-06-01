@@ -17,6 +17,9 @@ cd "$KERNEL_DIR" || exit 1
 
 MAKE_OPT+=(CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi-)
 
+#anykernel3
+git clone https://github.com/Mohamedfullhd/AnyKernel3.git --depth=1
+
 rm -rf /home/skye/bomb/out/arch/arm64/boot/Image
 rm -rf /home/skye/bomb/AnyKernel3/dtb
 rm -rf /home/skye/bomb/dtbo.img
@@ -40,9 +43,9 @@ IMAGE="/home/skye/bomb/out/arch/arm64/boot/Image"
 echo "**Build outputs**"
 ls /home/skye/bomb/out/arch/arm64/boot
 echo "**Build outputs**"
-cp $IMAGE /home/skye/bomb/AnyKernel3/x1q/Image
+cp $IMAGE /home/skye/bomb/AnyKernel3/Image
 
-cd /home/skye/bomb/AnyKernel3/x1q
+cd /home/skye/bomb/AnyKernel3
 rm *.zip
 zip -r9 ${KERNEL_NAME}$(date +"%Y%m%d")+x1q.zip .
 echo "The bomb has been planted."
