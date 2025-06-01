@@ -60,7 +60,7 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHATID: ${{ secrets.TELEGRAM_CHATID }}
         run: |
-          ./x1q.sh ${{ github.event.inputs.build_target }}
+           sudo bash x1q.sh ${{ github.event.inputs.build_target }}
 
       # Prepare artifacts
       - name: Prepare artifacts
