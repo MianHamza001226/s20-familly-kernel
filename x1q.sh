@@ -1,61 +1,40 @@
 #!/bin/bash
-
-# Set paths and variables
-BASE_DIR="$(pwd)"
-OUT_DIR="$BASE_DIR/out"
-ANYKERNEL_DIR="$BASE_DIR/AnyKernel3/x1q"
-IMAGE_PATH="$OUT_DIR/arch/arm64/boot/Image"
-DTBO_PATH="$OUT_DIR/arch/arm64/boot/dtbo.img"
-DTB_DIR="$OUT_DIR/arch/arm64/boot/dts/vendor/qcom"
+LLVM_PATH="/home/skye/bomb/clang/bin/"
+TC_PATH="/home/skye/bomb/clang/bin/"
+GCC_PATH="/usr/bin/"
+LLD_PATH="/usr/bin/"
 KERNEL_NAME="not_kernel-"
+MAKE="./makeparallel"
+BUILD_ENV="ARCH=arm64 CC=${TC_PATH}clang-21 CROSS_COMPILE=${TC_PATH}aarch64-linux-gnu- LLVM=1 LLVM_IAS=1 PATH=$LLVM_PATH:$LLD_PATH:$PATH"  
+KERNEL_MAKE_ENV="DTC_EXT=$(pwd)/tools/dtc CONFIG_BUILD_ARM64_DT_OVERLAY=y"
 
-# Install dependencies
-sudo apt-get update && sudo apt-get install -y \
-    clang-format clang-tidy clang-tools clang clangd \
-    libc++-dev libc++1 libc++abi-dev libc++abi1 \
-    libclang-dev libclang1 liblldb-dev libllvm-ocaml-dev \
-    libomp-dev libomp5 lld lldb llvm-dev llvm-runtime \
-    llvm python3-clang gcc-aarch64-linux-gnu bc git make
-
-# Clone Proton Clang if not exists
-if [ ! -d "proton-clang" ]; then
-    git clone https://gitlab.com/LeCmnGend/clang.git -b clang-18 --depth=1 proton-clang
-fi
-
-# Set up toolchain
-TC_DIR="$BASE_DIR/proton-clang"
-export PATH="$TC_DIR/bin:$PATH"
-export CONFIG_NO_ERROR_ON_MISMATCH=y
-export CONFIG_DEBUG_SECTION_MISMATCH=y
-export KBUILD_BUILD_USER="SudoMohamed"
-export KBUILD_BUILD_HOST="🌱"
-
-# Clean previous builds
-rm -rf "$IMAGE_PATH" "$DTBO_PATH" .version .local
-rm -rf "$ANYKERNEL_DIR/dtb"
-mkdir -p "$OUT_DIR" "$ANYKERNEL_DIR"
-
-# Build configuration
-DEFCONFIG="vendor/kona-not_defconfig vendor/samsung/x1q.config vendor/debugfs.config"
-make O="$OUT_DIR" CC=clang ARCH=arm64 $DEFCONFIG
+rm -rf /home/skye/bomb/out/arch/arm64/boot/Image
+rm -rf /home/skye/bomb/AnyKernel3/dtb
+rm -rf /home/skye/bomb/dtbo.img
+rm -rf .version
+rm -rf .local
+#make O=/home/skye/bomb/out clean
+make O=/home/skye/bomb/out $BUILD_ENV vendor/kona-not_defconfig vendor/samsung/x1q.config vendor/debugfs.config
 
 echo "*****************************************"
-echo "** STARTING KERNEL BUILD               **"
 echo "*****************************************"
 
-# Build kernel
-make -j$(nproc) O="$OUT_DIR" \
-    KCFLAGS=-w \
-    ARCH=arm64 \
-    CC=clang \
-    AR=llvm-ar \
-    NM=llvm-nm \
-    OBJDUMP=llvm-objdump \
-    STRIP=llvm-strip \
-    CROSS_COMPILE=aarch64-linux-gnu- \
-    CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
-    DTC_EXT="$BASE_DIR/tools/dtc" \
-    CONFIG_BUILD_ARM64_DT_OVERLAY=y
+make -j12 O=/home/skye/bomb/out $BUILD_ENV dtbs
+DTB_OUT="/home/skye/bomb/out/arch/arm64/boot/dts/vendor/qcom"
+cat $DTB_OUT/*.dtb > /home/skye/bomb/AnyKernel3/x1q/dtb
 
+#make -j12 O=/home/skye/bomb/out $KERNEL_MAKE_ENV $BUILD_ENV dtbo.img
+DTBO_OUT="/home/skye/bomb/out/arch/arm64/boot"
+#cp $DTBO_OUT/dtbo.img /home/skye/bomb/dtbo.img
 
-echo "✅ The bomb has been planted."
+make -j12 O=/home/skye/bomb/out $KERNEL_MAKE_ENV $BUILD_ENV Image
+IMAGE="/home/skye/bomb/out/arch/arm64/boot/Image"
+echo "**Build outputs**"
+ls /home/skye/bomb/out/arch/arm64/boot
+echo "**Build outputs**"
+cp $IMAGE /home/skye/bomb/AnyKernel3/x1q/Image
+
+cd /home/skye/bomb/AnyKernel3/x1q
+rm *.zip
+zip -r9 ${KERNEL_NAME}$(date +"%Y%m%d")+x1q.zip .
+echo "The bomb has been planted."
