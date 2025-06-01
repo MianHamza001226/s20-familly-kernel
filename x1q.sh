@@ -17,9 +17,6 @@ cd "$KERNEL_DIR" || exit 1
 
 MAKE_OPT+=(CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi-)
 
-#anykernel3
-git clone https://github.com/Mohamedfullhd/AnyKernel3.git --depth=1
-
 rm -rf /home/skye/bomb/out/arch/arm64/boot/Image
 rm -rf /home/skye/bomb/AnyKernel3/dtb
 rm -rf /home/skye/bomb/dtbo.img
