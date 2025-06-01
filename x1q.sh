@@ -30,7 +30,7 @@ echo "*****************************************"
 
 make -j12 O=/home/skye/bomb/out ARCH=arm64 LLVM=1 LLVM_IAS=1 "${MAKE_OPT[@]}"  dtbs
 DTB_OUT="/home/skye/bomb/out/arch/arm64/boot/dts/vendor/qcom"
-cat $DTB_OUT/*.dtb > /home/skye/bomb/AnyKernel3/x1q/dtb
+cat $DTB_OUT/*.dtb > AnyKernel3/dtb
 
 #make -j12 O=/home/skye/bomb/out $KERNEL_MAKE_ENV $BUILD_ENV dtbo.img
 DTBO_OUT="/home/skye/bomb/out/arch/arm64/boot"
@@ -40,9 +40,9 @@ IMAGE="/home/skye/bomb/out/arch/arm64/boot/Image"
 echo "**Build outputs**"
 ls /home/skye/bomb/out/arch/arm64/boot
 echo "**Build outputs**"
-cp $IMAGE /home/skye/bomb/AnyKernel3/Image
+cp $IMAGE AnyKernel3/Image
 
-cd /home/skye/bomb/AnyKernel3
+cd AnyKernel3
 rm *.zip
 zip -r9 ${KERNEL_NAME}$(date +"%Y%m%d")+x1q.zip .
 echo "The bomb has been planted."
