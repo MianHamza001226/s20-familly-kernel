@@ -2559,24 +2559,24 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 	if (test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags) ||
 	    test_bit(WLVIF_FLAG_INITIALIZED, &wlvif->flags)) {
 		ret = -EBUSY;
-		goto out_unlock;
+		goto out;
 	}
 
 
 	ret = wl12xx_init_vif_data(wl, vif);
 	if (ret < 0)
-		goto out_unlock;
+		goto out;
 
 	wlvif->wl = wl;
 	role_type = wl12xx_get_role_type(wl, wlvif);
 	if (role_type == WL12XX_INVALID_ROLE_TYPE) {
 		ret = -EINVAL;
-		goto out_unlock;
+		goto out;
 	}
 
 	ret = wlcore_allocate_hw_queue_base(wl, wlvif);
 	if (ret < 0)
-		goto out_unlock;
+		goto out;
 
 	/*
 	 * TODO: after the nvs issue will be solved, move this block
@@ -2591,7 +2591,7 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 
 		ret = wl12xx_init_fw(wl);
 		if (ret < 0)
-			goto out_unlock;
+			goto out;
 	}
 
 	/*
@@ -2875,8 +2875,21 @@ static int wlcore_join(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 
 	if (is_ibss)
 		ret = wl12xx_cmd_role_start_ibss(wl, wlvif);
-	else
+	else {
+		if (wl->quirks & WLCORE_QUIRK_START_STA_FAILS) {
+			/*
+			 * TODO: this is an ugly workaround for wl12xx fw
+			 * bug - we are not able to tx/rx after the first
+			 * start_sta, so make dummy start+stop calls,
+			 * and then call start_sta again.
+			 * this should be fixed in the fw.
+			 */
+			wl12xx_cmd_role_start_sta(wl, wlvif);
+			wl12xx_cmd_role_stop_sta(wl, wlvif);
+		}
+
 		ret = wl12xx_cmd_role_start_sta(wl, wlvif);
+	}
 
 	return ret;
 }
@@ -3658,10 +3671,8 @@ void wlcore_regdomain_config(struct wl1271 *wl)
 		goto out;
 
 	ret = pm_runtime_get_sync(wl->dev);
-	if (ret < 0) {
-		pm_runtime_put_autosuspend(wl->dev);
+	if (ret < 0)
 		goto out;
-	}
 
 	ret = wlcore_cmd_regdomain_config_locked(wl);
 	if (ret < 0) {
