@@ -53,7 +53,7 @@ jobs:
 
       # Rest of your steps...
       - name: Set permissions
-        run: chmod +x x1q.sh
+        run: chmod +x z3q.sh
 
       - name: Build kernel
         env:
