@@ -1,4 +1,4 @@
-name: not x1q build_
+name: not z3q build_
 
 on:
   workflow_dispatch:
@@ -60,7 +60,7 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHATID: ${{ secrets.TELEGRAM_CHATID }}
         run: |
-           sudo bash x1q.sh ${{ github.event.inputs.build_target }}
+           sudo bash z3q.sh ${{ github.event.inputs.build_target }}
 
       # Prepare artifacts
       - name: Prepare artifacts
