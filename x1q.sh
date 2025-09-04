@@ -44,5 +44,5 @@ cp $IMAGE AnyKernel3/Image
 
 cd AnyKernel3
 rm *.zip
-zip -r9 ${KERNEL_NAME}$(date +"%Y%m%d")+x1q.zip .
+zip -r9 ${KERNEL_NAME}$(date +"%Y%m%d")+z3q.zip .
 echo "The bomb has been planted."
