@@ -23,7 +23,7 @@ rm -rf /home/skye/bomb/dtbo.img
 rm -rf .version
 rm -rf .local
 #make O=/home/skye/bomb/out clean
-make O=/home/skye/bomb/out ARCH=arm64 LLVM=1 LLVM_IAS=1 "${MAKE_OPT[@]}" vendor/kona-not_defconfig vendor/samsung/z3q.config vendor/debugfs.config
+make O=/home/skye/bomb/out ARCH=arm64 LLVM=1 LLVM_IAS=1 "${MAKE_OPT[@]}" vendor/kona-not_defconfig vendor/z3q_kor_singlex_defconfig vendor/debugfs.config
 
 echo "*****************************************"
 echo "*****************************************"
