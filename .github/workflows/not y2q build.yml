@@ -26,7 +26,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-        
+          
       # Setup environment
       - name: Setup environment
         run: |
@@ -51,21 +51,27 @@ jobs:
           }
           ls -la
 
-      # Rest of your steps...
+      # Set permissions
       - name: Set permissions
         run: chmod +x y2q.sh
 
+      # Build kernel with SELinux enforcing
       - name: Build kernel
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHATID: ${{ secrets.TELEGRAM_CHATID }}
         run: |
-           sudo bash y2q.sh ${{ github.event.inputs.build_target }}
+          # Force SELinux enforcing in kernel config
+          echo "CONFIG_SECURITY_SELINUX=y" >> arch/arm64/configs/vendor/y2q_defconfig
+          echo "CONFIG_SECURITY_SELINUX_BOOTPARAM_VALUE=1" >> arch/arm64/configs/vendor/y2q_defconfig
+          # Force enforcing in device tree bootargs
+          echo "androidboot.selinux=enforcing" >> arch/arm64/boot/dts/vendor/qcom/y2q.dtsi
+          
+          sudo bash y2q.sh ${{ github.event.inputs.build_target }}
 
       # Prepare artifacts
       - name: Prepare artifacts
         run: |
-          
           if [[ -f out/arch/arm64/boot/Image.gz-dtb ]]; then
             cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3/Image.gz-dtb
           elif [[ -f out/arch/arm64/boot/Image-dtb ]]; then
