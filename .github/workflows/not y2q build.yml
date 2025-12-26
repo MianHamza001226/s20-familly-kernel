@@ -22,12 +22,10 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      # Checkout repository
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-        
-      # Setup environment
+          
       - name: Setup environment
         run: |
           sudo apt-get update && sudo apt-get install -y \
@@ -37,11 +35,9 @@ jobs:
             liblz4-tool optipng libssl-dev python-is-python3 python3-virtualenv \
             llvm clang lld
 
-      # Initialize submodules
       - name: Initialize submodules
         run: git submodule update --init --recursive
 
-      # Create artifact directory with unique name
       - name: Create artifact directory
         run: |
           echo "Creating artifact directory: ${{ env.ARTIFACT_DIR }}"
@@ -51,7 +47,50 @@ jobs:
           }
           ls -la
 
-      # Rest of your steps...
+      - name: Force SELinux enforcing in configs and DTS
+        run: |
+          set -e
+
+          # 1) Enforce SELinux in defconfig(s)
+          CONFIG_FILES=$(git ls-files \
+            "arch/arm64/configs/vendor/y2q_defconfig" \
+            "arch/arm64/configs/vendor/y2q*.config" \
+            "arch/arm64/configs/*y2q*defconfig" || true)
+
+          if [ -z "$CONFIG_FILES" ]; then
+            echo "No y2q defconfig files found, attempt to use common vendor defconfig if present."
+            CONFIG_FILES=$(git ls-files "arch/arm64/configs/vendor/*.defconfig" || true)
+          fi
+
+          for f in $CONFIG_FILES; do
+            echo "Patching $f"
+            # Ensure SELinux enabled
+            grep -q '^CONFIG_SECURITY_SELINUX=' "$f" && \
+              sed -i 's/^CONFIG_SECURITY_SELINUX=.*/CONFIG_SECURITY_SELINUX=y/' "$f" || \
+              echo 'CONFIG_SECURITY_SELINUX=y' >> "$f"
+
+            # Force bootparam enforcing (1=enforcing, 0=permissive)
+            grep -q '^CONFIG_SECURITY_SELINUX_BOOTPARAM_VALUE=' "$f" && \
+              sed -i 's/^CONFIG_SECURITY_SELINUX_BOOTPARAM_VALUE=.*/CONFIG_SECURITY_SELINUX_BOOTPARAM_VALUE=1/' "$f" || \
+              echo 'CONFIG_SECURITY_SELINUX_BOOTPARAM_VALUE=1' >> "$f"
+          done
+
+          # 2) Enforce via androidboot.selinux in DTS chosen bootargs (best-effort)
+          DTS_FILES=$(git ls-files "arch/arm64/boot/dts/vendor/qcom/*y2q*.dtsi" "arch/arm64/boot/dts/vendor/qcom/*.dtsi" || true)
+          for d in $DTS_FILES; do
+            # If bootargs exists, set or replace androidboot.selinux to enforcing
+            if grep -q 'bootargs' "$d"; then
+              if grep -q 'androidboot.selinux=' "$d"; then
+                sed -i 's/androidboot.selinux=\(permissive\|enforcing\)/androidboot.selinux=enforcing/g' "$d"
+              else
+                # Append enforcing to existing bootargs string
+                sed -i 's/\(bootargs *= *"\)/\1androidboot.selinux=enforcing /' "$d"
+              fi
+              echo "Updated bootargs in $d"
+              break
+            fi
+          done
+
       - name: Set permissions
         run: chmod +x y2q.sh
 
@@ -60,12 +99,16 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHATID: ${{ secrets.TELEGRAM_CHATID }}
         run: |
-           sudo bash y2q.sh ${{ github.event.inputs.build_target }}
+          sudo bash y2q.sh ${{ github.event.inputs.build_target }}
 
-      # Prepare artifacts
+      - name: Verify enforcing in built config
+        run: |
+          if [ -f out/.config ]; then
+            grep -E 'CONFIG_SECURITY_SELINUX=|CONFIG_SECURITY_SELINUX_BOOTPARAM_VALUE=' out/.config || true
+          fi
+
       - name: Prepare artifacts
         run: |
-          
           if [[ -f out/arch/arm64/boot/Image.gz-dtb ]]; then
             cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3/Image.gz-dtb
           elif [[ -f out/arch/arm64/boot/Image-dtb ]]; then
@@ -79,7 +122,6 @@ jobs:
             cp out/arch/arm64/boot/dtbo.img AnyKernel3/dtbo.img
           fi
 
-      # Upload kernel artifact
       - name: Upload kernel to artifact
         uses: actions/upload-artifact@v4
         with:
