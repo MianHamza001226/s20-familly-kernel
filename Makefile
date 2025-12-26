@@ -2,8 +2,8 @@
 VERSION = 4
 PATCHLEVEL = 19
 SUBLEVEL = 331
-EXTRAVERSION =
-NAME = "People's Front"
+EXTRAVERSION = 
+NAME = "OneUi 7"
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
